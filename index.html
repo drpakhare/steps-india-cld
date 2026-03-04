@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEPS-INDIA · Causal Loop Diagrams</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F2EC;--surface:#FFFFFF;--ink:#1A1A24;--ink2:#3C3C50;--ink3:#7A7A92;--rule:#DDD8CE;--teal:#0A6E62;--teal-l:#E6F4F1;--gold:#B07A08;--gold-l:#FDF4E3;--navy:#18305E;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);font-family:'Lora',Georgia,serif;color:var(--ink);font-size:16px;line-height:1.75;}
+
+.top-band{background:var(--navy);color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;text-align:center;padding:.42rem 1rem;}
+
+/* HERO */
+.hero{background:var(--surface);border-bottom:1px solid var(--rule);padding:4rem 2rem 3.5rem;}
+.hero-inner{max-width:800px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:start;}
+@media(max-width:640px){.hero-inner{grid-template-columns:1fr;}}
+.hero-kicker{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:1.1rem;display:flex;align-items:center;gap:.6rem;}
+.hero-kicker::before{content:'';display:inline-block;width:20px;height:1px;background:var(--teal);}
+h1{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,4vw,2.75rem);font-weight:700;line-height:1.14;color:var(--ink);letter-spacing:-.02em;margin-bottom:1.1rem;}
+h1 em{font-style:italic;font-weight:500;color:var(--teal);}
+.hero-lead{font-size:1.02rem;line-height:1.8;color:var(--ink2);max-width:540px;}
+.hero-cta{display:inline-flex;align-items:center;gap:.55rem;margin-top:1.8rem;background:var(--teal);color:#fff;text-decoration:none;font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;padding:.75rem 1.4rem;border-radius:3px;transition:background .18s,transform .18s;}
+.hero-cta:hover{background:#0A8070;transform:translateY(-1px);}
+.cta-arr{font-size:1rem;transition:transform .18s;}
+.hero-cta:hover .cta-arr{transform:translateX(3px);}
+
+/* BADGE */
+.trial-badge{border:1px solid var(--rule);border-radius:4px;overflow:hidden;font-family:'DM Mono',monospace;min-width:175px;flex-shrink:0;}
+.badge-head{background:var(--navy);color:rgba(255,255,255,.55);font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.5rem .8rem;text-align:center;}
+.badge-row{display:flex;justify-content:space-between;align-items:baseline;padding:.42rem .8rem;border-bottom:1px solid var(--rule);font-size:.72rem;}
+.badge-row:last-child{border-bottom:none;}
+.badge-key{color:var(--ink3);font-size:.58rem;}
+.badge-val{color:var(--ink);font-weight:500;}
+.badge-val.a{color:var(--teal);}
+
+/* LAYOUT */
+.wrap{max-width:800px;margin:0 auto;padding:0 2rem;}
+.section{padding:3.6rem 0;}
+.section+.section{border-top:1px solid var(--rule);}
+.s-label{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:.65rem;}
+h2{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:500;color:var(--ink);letter-spacing:-.015em;margin-bottom:.35rem;}
+.s-sub{font-size:.9rem;color:var(--ink3);font-style:italic;margin-bottom:2rem;}
+
+/* PURPOSE CARDS */
+.purpose-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2.2rem;}
+@media(max-width:560px){.purpose-grid{grid-template-columns:1fr;}}
+.pcard{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:1.3rem;}
+.pcard h3{font-family:'Playfair Display',serif;font-size:.98rem;font-weight:500;color:var(--ink);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;}
+.picon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;}
+.picon.t{background:var(--teal-l);color:var(--teal);}
+.picon.g{background:var(--gold-l);color:var(--gold);}
+.pcard p{font-size:.85rem;line-height:1.68;color:var(--ink2);}
+.pcard p strong{color:var(--ink);}
+
+/* LOOPS */
+.loop-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.1rem;}
+@media(max-width:560px){.loop-row{grid-template-columns:1fr;}}
+.lcard{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:1rem 1.1rem;}
+.ltype{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.3rem;}
+.ltype.R{color:var(--teal);}
+.ltype.B{color:var(--gold);}
+.lname{font-family:'Playfair Display',serif;font-size:.94rem;font-weight:500;color:var(--ink);margin-bottom:.28rem;}
+.ldesc{font-size:.79rem;line-height:1.58;color:var(--ink2);}
+
+/* HOW TO USE — dark box */
+.how-box{background:var(--navy);border-radius:5px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;}
+@media(max-width:560px){.how-box{grid-template-columns:1fr;}}
+.how-left{padding:2rem 2rem 2rem 2.2rem;}
+.how-left .s-label{color:rgba(255,255,255,.4);}
+.how-left h2{color:#fff;font-size:1.3rem;margin-bottom:.8rem;}
+.how-left p{font-size:.87rem;line-height:1.72;color:rgba(255,255,255,.65);font-family:'Lora',serif;margin-bottom:1.2rem;}
+.how-left p strong{color:rgba(255,255,255,.9);font-weight:500;}
+.how-cta{display:inline-flex;align-items:center;gap:.5rem;background:var(--teal);color:#fff;text-decoration:none;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:.7rem 1.3rem;border-radius:3px;transition:background .18s,transform .18s;}
+.how-cta:hover{background:#0A8070;transform:translateY(-1px);}
+.how-right{border-left:1px solid rgba(255,255,255,.1);padding:2rem;display:flex;flex-direction:column;gap:.95rem;}
+.how-step{display:flex;gap:.8rem;align-items:flex-start;}
+.how-n{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;font-size:.6rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.how-step-text{font-size:.82rem;line-height:1.62;color:rgba(255,255,255,.6);font-family:'Lora',serif;}
+.how-step-text strong{color:rgba(255,255,255,.88);font-weight:500;}
+.kbd{display:inline-block;font-family:'DM Mono',monospace;font-size:.58rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:.03rem .28rem;color:rgba(255,255,255,.65);}
+
+/* DIAGRAMS */
+.diag-intro{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:1.3rem 1.5rem;margin-bottom:1.5rem;font-size:.9rem;line-height:1.75;color:var(--ink2);}
+.diag-intro strong{color:var(--ink);}
+.diag-list{display:flex;flex-direction:column;gap:.85rem;}
+.diag-item{background:var(--surface);border:1px solid var(--rule);border-radius:4px;display:flex;align-items:stretch;overflow:hidden;text-decoration:none;color:inherit;transition:box-shadow .18s,transform .18s;}
+.diag-item:hover{box-shadow:0 4px 20px rgba(0,0,0,.09);transform:translateY(-1px);}
+.d-stripe{width:5px;flex-shrink:0;}
+.d-stripe.htn{background:linear-gradient(180deg,#1A4A7A,#0A6E62);}
+.d-stripe.dm {background:linear-gradient(180deg,#0A6E62,#1E5C1E);}
+.d-stripe.eces{background:linear-gradient(180deg,#5A1A6E,#1A4A7A);}
+.d-body{flex:1;padding:1.1rem 1.3rem;}
+.d-tag{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin-bottom:.2rem;}
+.d-title{font-family:'Playfair Display',serif;font-size:1.06rem;font-weight:500;color:var(--ink);margin-bottom:.28rem;}
+.d-desc{font-size:.84rem;line-height:1.62;color:var(--ink2);}
+.d-meta{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;padding:.9rem 1.1rem;border-left:1px solid var(--rule);flex-shrink:0;min-width:96px;background:#FAFAF7;}
+.meta-n{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--teal);display:block;text-align:center;}
+.meta-l{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);text-align:center;}
+.d-arr{display:flex;align-items:center;padding:0 .9rem;font-size:1.05rem;color:var(--teal);border-left:1px solid var(--rule);flex-shrink:0;transition:transform .18s;}
+.diag-item:hover .d-arr{transform:translateX(3px);}
+
+/* MODULES */
+.mods{display:flex;flex-direction:column;gap:.75rem;}
+.mod{display:flex;align-items:center;gap:1.1rem;background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:.95rem 1.1rem;transition:box-shadow .16s;}
+.mod:hover{box-shadow:0 3px 14px rgba(0,0,0,.07);}
+.mod-num{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;color:var(--rule);flex-shrink:0;width:26px;text-align:center;}
+.mod-body{flex:1;}
+.mod-tag{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin-bottom:.12rem;}
+.mod-title{font-size:.92rem;font-weight:500;color:var(--ink);margin-bottom:.12rem;}
+.mod-desc{font-size:.8rem;color:var(--ink2);line-height:1.5;}
+.mod-dl{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.2rem;text-decoration:none;color:var(--teal);font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.06em;text-transform:uppercase;padding:.55rem .85rem;border:1px solid var(--rule);border-radius:4px;background:#FAFAF7;transition:background .15s,border-color .15s;white-space:nowrap;}
+.mod-dl:hover{background:var(--teal-l);border-color:#A0D8CE;}
+.mod-dl-icon{font-size:1.1rem;}
+
+footer{background:var(--ink);color:rgba(255,255,255,.35);padding:1.8rem 2rem;text-align:center;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;line-height:2;}
+footer a{color:rgba(255,255,255,.5);text-decoration:none;}
+footer a:hover{color:#fff;}
+
+.fi{opacity:0;transform:translateY(14px);animation:fi .5s ease forwards;}
+@keyframes fi{to{opacity:1;transform:none;}}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.2s}.d4{animation-delay:.28s}
+</style>
+</head>
+<body>
+
+<div class="top-band">STEPS-INDIA &nbsp;·&nbsp; Pre-trial Process Evaluation &nbsp;·&nbsp; Co-Investigator Review</div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="fi">
+      <div class="hero-kicker">Causal Loop Diagrams</div>
+      <h1>Why does the intervention<br><em>work</em> — and how?</h1>
+      <p class="hero-lead">
+        This site presents the pre-trial systems science process evaluation framework for STEPS-INDIA.
+        Causal loop diagrams map the mechanisms, feedback loops, and structural constraints
+        theorised to link the intervention to blood pressure and glycaemic outcomes —
+        <em>before</em> results are known.
+      </p>
+      <a class="hero-cta" href="cld.html">
+        View stepwise animated narration <span class="cta-arr">→</span>
+      </a>
+    </div>
+    <div class="fi d2">
+      <div class="trial-badge">
+        <div class="badge-head">STEPS-INDIA</div>
+        <div class="badge-row"><span class="badge-key">Design</span><span class="badge-val a">Cluster RCT</span></div>
+        <div class="badge-row"><span class="badge-key">Clusters</span><span class="badge-val">360</span></div>
+        <div class="badge-row"><span class="badge-key">Participants</span><span class="badge-val">~14,400</span></div>
+        <div class="badge-row"><span class="badge-key">Conditions</span><span class="badge-val">HTN · DM</span></div>
+        <div class="badge-row"><span class="badge-key">Sites</span><span class="badge-val">6 (India)</span></div>
+        <div class="badge-row"><span class="badge-key">Follow-up</span><span class="badge-val">12 months</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- WHAT ARE CLDs -->
+<section class="section" id="about">
+  <div class="wrap">
+    <p class="s-label">Pre-trial process evaluation</p>
+    <h2>What these diagrams do</h2>
+    <p class="s-sub">Built before results are known — to explain mechanism, not just test effect.</p>
+
+    <div class="purpose-grid">
+      <div class="pcard fi d1">
+        <h3><div class="picon t">⟳</div>Map causal mechanisms</h3>
+        <p>CLDs make explicit <strong>how</strong> the intervention is theorised to produce change. Each arrow is a testable causal claim grounded in existing evidence from LMIC peer support trials and India-specific studies.</p>
+      </div>
+      <div class="pcard fi d2">
+        <h3><div class="picon g">⚡</div>Identify leverage points</h3>
+        <p>Feedback loops reveal where small inputs amplify into large effects (reinforcing loops) and where systemic constraints limit change regardless of effort (balancing loops) — the programme's high-yield implementation targets.</p>
+      </div>
+      <div class="pcard fi d3">
+        <h3><div class="picon t">◎</div>Anticipate failure modes</h3>
+        <p>Balancing loops — therapeutic inertia, economic barriers, SMBG cost ceiling — are structural constraints the intervention alone cannot overcome. <strong>Naming them pre-trial</strong> prevents post-hoc rationalisation of null results.</p>
+      </div>
+      <div class="pcard fi d4">
+        <h3><div class="picon g">≋</div>Guide co-investigator review</h3>
+        <p>This is a living framework for challenge and revision. Co-investigators hold site-specific knowledge about which arrows are strong, which are absent, and which need additional local evidence before trial launch.</p>
+      </div>
+    </div>
+
+    <p class="s-label" style="margin-bottom:.65rem;">Feedback loop structure across all diagrams</p>
+    <div class="loop-row fi d2">
+      <div class="lcard">
+        <div class="ltype R">R · Reinforcing</div>
+        <div class="lname">Self-Efficacy Loop</div>
+        <div class="ldesc">Controlled outcomes feed back to confidence, sustaining behaviour. The core growth engine — present in both HTN and DM CLDs.</div>
+      </div>
+      <div class="lcard">
+        <div class="ltype R">R · Reinforcing</div>
+        <div class="lname">Distress Reduction</div>
+        <div class="ldesc">DM-unique: controlled glycaemia reduces diabetes distress, restoring adherence. Intercepted via PAID-5 screening at sessions.</div>
+      </div>
+      <div class="lcard">
+        <div class="ltype B">B · Balancing</div>
+        <div class="lname">Therapeutic Inertia</div>
+        <div class="ldesc">80–90% of India encounters without treatment intensification. Demands supply-side IHCI change alongside the intervention.</div>
+      </div>
+    </div>
+    <div class="loop-row fi d3">
+      <div class="lcard">
+        <div class="ltype R">R · Reinforcing</div>
+        <div class="lname">Social Engagement</div>
+        <div class="ldesc">Members with controlled outcomes sustain peers. Selective attrition is the main risk — addressed by buddy systems.</div>
+      </div>
+      <div class="lcard">
+        <div class="ltype R">R · Reinforcing</div>
+        <div class="lname">Complication Awareness</div>
+        <div class="ldesc">DM-unique: awareness of retinopathy, nephropathy drives sustained behaviour and linkage to screening. R3 loop.</div>
+      </div>
+      <div class="lcard">
+        <div class="ltype B">B · Balancing</div>
+        <div class="lname">Economic Ceiling</div>
+        <div class="ldesc">OOP costs ₹9,014/quarter for HTN; SMBG strips absent from Jan Aushadhi for DM. Partially addressed via SHG linkage.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW TO USE — dark box spanning full width -->
+<section class="section" id="viewer" style="border-top:1px solid var(--rule);padding:3.6rem 0;">
+  <div class="wrap">
+    <div class="how-box fi">
+      <div class="how-left">
+        <p class="s-label">Stepwise animation with audio narration</p>
+        <h2>Interactive CLD Viewer</h2>
+        <p>Each diagram is revealed <strong>one causal pathway at a time</strong>, with narrated explanation and embedded evidence at every step. HTN and DM tabs use generated audio narration; eCES overlay uses browser speech synthesis.</p>
+        <p>Designed for <strong>projection at co-investigator meetings</strong> — use fullscreen mode and navigate with arrow keys.</p>
+        <a class="how-cta" href="cld.html">Open CLD Viewer →</a>
+      </div>
+      <div class="how-right">
+        <div class="how-step">
+          <div class="how-n">1</div>
+          <div class="how-step-text">Click <strong>▶ Play</strong> for automatic stepwise narration with audio</div>
+        </div>
+        <div class="how-step">
+          <div class="how-n">2</div>
+          <div class="how-step-text">Use <span class="kbd">←</span> <span class="kbd">→</span> to step manually or click any progress dot to jump</div>
+        </div>
+        <div class="how-step">
+          <div class="how-n">3</div>
+          <div class="how-step-text">Switch tabs — <strong>HTN · DM · eCES</strong> — each has independent steps and audio</div>
+        </div>
+        <div class="how-step">
+          <div class="how-n">4</div>
+          <div class="how-step-text">Press <span class="kbd">F</span> for fullscreen during presentations</div>
+        </div>
+        <div class="how-step">
+          <div class="how-n">5</div>
+          <div class="how-step-text">Evidence callouts appear in the sidebar at each step with trial-level effect estimates</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THREE DIAGRAMS -->
+<section class="section" id="diagrams">
+  <div class="wrap">
+    <p class="s-label">Three diagrams</p>
+    <h2>What's in the viewer</h2>
+    <p class="s-sub">Click any card to open the viewer directly on that diagram.</p>
+
+    <div class="diag-intro fi">
+      The three diagrams share a common node set but model different causal depth.
+      The <strong>HTN and DM CLDs</strong> represent the core intervention theory, traceable to published evidence.
+      The <strong>eCES overlay</strong> models five additional programme components with an explicit epistemic gradient —
+      PSG pathways rest on trial evidence; eCES add-ons on structural and proxy evidence only.
+      This distinction is visible in the arrow styling within the viewer.
+    </div>
+
+    <div class="diag-list">
+      <a class="diag-item fi d1" href="cld.html?tab=htn">
+        <div class="d-stripe htn"></div>
+        <div class="d-body">
+          <div class="d-tag">Hypertension &nbsp;·&nbsp; 12 steps &nbsp;·&nbsp; ElevenLabs audio</div>
+          <div class="d-title">HTN Causal Loop Diagram</div>
+          <div class="d-desc">Self-efficacy, medication adherence, lifestyle pathways, stigma, linkage, and therapeutic inertia — converging at controlled SBP. 3 reinforcing loops and 2 balancing loops. Central estimate: −4.8 mmHg SBP (Avery 2025, n=13,976).</div>
+        </div>
+        <div class="d-meta">
+          <div><span class="meta-n">3R+2B</span><span class="meta-l">Loops</span></div>
+          <div><span class="meta-n">24</span><span class="meta-l">Arrows</span></div>
+        </div>
+        <div class="d-arr">→</div>
+      </a>
+      <a class="diag-item fi d2" href="cld.html?tab=dm">
+        <div class="d-stripe dm"></div>
+        <div class="d-body">
+          <div class="d-tag">Diabetes mellitus &nbsp;·&nbsp; 9 steps &nbsp;·&nbsp; Descript audio</div>
+          <div class="d-title">DM Causal Loop Diagram</div>
+          <div class="d-desc">Adds diabetes distress (PAID-5 pathway), complication awareness (R3 loop), and SMBG cost ceiling (B2 loop). Shares 10 nodes with the HTN CLD — comorbid participants activate both simultaneously. Central estimate: −0.90% HbA1c (Jeyaraman 2018).</div>
+        </div>
+        <div class="d-meta">
+          <div><span class="meta-n">4R+2B</span><span class="meta-l">Loops</span></div>
+          <div><span class="meta-n">30</span><span class="meta-l">Arrows</span></div>
+        </div>
+        <div class="d-arr">→</div>
+      </a>
+      <a class="diag-item fi d3" href="cld.html?tab=eces">
+        <div class="d-stripe eces"></div>
+        <div class="d-body">
+          <div class="d-tag">eCES overlay &nbsp;·&nbsp; 7 steps &nbsp;·&nbsp; Browser TTS</div>
+          <div class="d-title">Enhanced Community Engagement Strategy</div>
+          <div class="d-desc">Health Diary and Family NCD Coach (Part A), NCD Club (Part B), Capacity Building and Communication Aid (Part C) — shown as dashed arrows entering the PSG causal base. Capacity Building modelled as a fidelity multiplier (0.5×–1.2×) across all other components.</div>
+        </div>
+        <div class="d-meta">
+          <div><span class="meta-n">+5</span><span class="meta-l">Nodes</span></div>
+          <div><span class="meta-n">+16</span><span class="meta-l">Arrows</span></div>
+        </div>
+        <div class="d-arr">→</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section class="section" id="modules">
+  <div class="wrap">
+    <p class="s-label">Technical documentation</p>
+    <h2>Downloadable modules</h2>
+    <p class="s-sub">Full written evidence base for co-investigator review and grant documentation.</p>
+    <div class="mods">
+      <div class="mod fi d1">
+        <div class="mod-num">1</div>
+        <div class="mod-body">
+          <div class="mod-tag">Sections 1–3</div>
+          <div class="mod-title">Introduction, Intervention Framework &amp; Trial Architecture</div>
+          <div class="mod-desc">Background, theory of change, CHW-LMIC evidence base, STEPS-INDIA design rationale, process evaluation framework.</div>
+        </div>
+        <a class="mod-dl" href="docs/Module1_Introduction_PSG_Framework.docx" download><span class="mod-dl-icon">↓</span>.docx</a>
+      </div>
+      <div class="mod fi d2">
+        <div class="mod-num">2</div>
+        <div class="mod-body">
+          <div class="mod-tag">Section 4</div>
+          <div class="mod-title">Evidence Base — Full eCES Overlay</div>
+          <div class="mod-desc">Systematic review synthesis for all five eCES components. Epistemic gradient, parameter estimates, proxy evidence mapping.</div>
+        </div>
+        <a class="mod-dl" href="docs/Module2_Evidence_Base_Full_eCES.docx" download><span class="mod-dl-icon">↓</span>.docx</a>
+      </div>
+      <div class="mod fi d3">
+        <div class="mod-num">3</div>
+        <div class="mod-body">
+          <div class="mod-tag">Sections 5–6</div>
+          <div class="mod-title">Causal Loop Diagrams &amp; Loop Analysis</div>
+          <div class="mod-desc">Full HTN and DM CLDs with loop-by-loop analysis, leverage points, balancing constraints, and co-investigator review questions.</div>
+        </div>
+        <a class="mod-dl" href="docs/Module3_CLDs_Loop_Analysis.docx" download><span class="mod-dl-icon">↓</span>.docx</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>STEPS-INDIA &nbsp;·&nbsp; Pre-trial Systems Science Process Evaluation &nbsp;·&nbsp; Co-Investigator Review</div>
+  <div style="margin-top:.3rem;">
+    <a href="cld.html">CLD Viewer</a> &nbsp;·&nbsp;
+    <a href="#about">What are CLDs</a> &nbsp;·&nbsp;
+    <a href="#diagrams">Diagrams</a> &nbsp;·&nbsp;
+    <a href="#modules">Documentation</a>
+  </div>
+</footer>
+
+</body>
+</html>

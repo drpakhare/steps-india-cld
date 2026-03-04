@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEPS-INDIA · CLD Animated Narration</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #F7F5F0;
+  --surface: #FFFFFF;
+  --border:  #DDD8CE;
+  --ink:     #1C1C2E;
+  --ink2:    #4A4A5E;
+  --ink3:    #8A8A9E;
+  --teal:    #0A6E62;
+  --teal-l:  #E8F5F3;
+  --blue:    #1A4A7A;
+  --blue-l:  #EBF2FA;
+  --amber:   #8A5A00;
+  --amber-l: #FEF5E4;
+  --red:     #8A1A1A;
+  --red-l:   #FAEAEA;
+  --green:   #1E5C1E;
+  --green-l: #EAF5EA;
+  --gold:    #C8860A;
+  --shadow:  0 2px 12px rgba(0,0,0,.09);
+  --shadow2: 0 4px 24px rgba(0,0,0,.13);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); font-family:'Inter',sans-serif; color:var(--ink); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+/* ── HEADER ── */
+.header { display:flex; align-items:center; justify-content:space-between; padding:.6rem 1.4rem; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; box-shadow:var(--shadow); z-index:10; }
+.htitle { font-family:'Lora',serif; font-size:.98rem; color:var(--ink); }
+.htitle span { font-family:'DM Mono',monospace; font-size:.55rem; color:var(--teal); display:block; letter-spacing:.14em; text-transform:uppercase; margin-bottom:1px; }
+.header-right { display:flex; align-items:center; gap:.8rem; }
+.step-pill { font-family:'DM Mono',monospace; font-size:.65rem; color:var(--ink3); background:var(--bg); border:1px solid var(--border); padding:.25rem .6rem; border-radius:20px; }
+.step-pill b { color:var(--teal); }
+
+/* ── TABS ── */
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--surface); flex-shrink:0; padding:0 1.4rem; }
+.tab { font-family:'DM Mono',monospace; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; padding:.55rem 1.1rem; cursor:pointer; border-bottom:2px solid transparent; color:var(--ink3); transition:all .18s; user-select:none; }
+.tab:hover { color:var(--ink); }
+.tab.active { color:var(--teal); border-bottom-color:var(--teal); font-weight:500; }
+
+/* ── AUDIO STATUS ── */
+.audio-bar { display:flex; align-items:center; gap:.6rem; padding:.3rem 1.4rem; background:#F0EDE8; border-bottom:1px solid var(--border); font-family:'DM Mono',monospace; font-size:.6rem; color:var(--ink3); flex-shrink:0; }
+.audio-mode { padding:.15rem .5rem; border-radius:10px; font-size:.58rem; letter-spacing:.07em; text-transform:uppercase; }
+.audio-mode.mp3  { background:#D4F0EA; color:var(--teal); border:1px solid #A0D8CE; }
+.audio-mode.tts  { background:var(--amber-l); color:var(--amber); border:1px solid #E8D090; }
+.audio-mode.none { background:var(--bg); color:var(--ink3); border:1px solid var(--border); }
+#audio-file-lbl { flex:1; }
+.waveform { display:flex; align-items:center; gap:2px; height:14px; }
+.waveform span { display:inline-block; width:3px; border-radius:2px; background:var(--teal); animation:wave 1.2s ease-in-out infinite; }
+.waveform span:nth-child(1){height:3px;animation-delay:0s}
+.waveform span:nth-child(2){height:9px;animation-delay:.15s}
+.waveform span:nth-child(3){height:14px;animation-delay:.3s}
+.waveform span:nth-child(4){height:9px;animation-delay:.45s}
+.waveform span:nth-child(5){height:3px;animation-delay:.6s}
+.waveform.paused span { animation:none; height:3px !important; background:var(--border); }
+@keyframes wave { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.3)} }
+
+/* ── MAIN LAYOUT ── */
+.body { display:flex; flex:1; overflow:hidden; }
+
+/* ── SVG CANVAS ── */
+.canvas { flex:1; position:relative; overflow:hidden; background:var(--bg); }
+.cld-panel { display:none; width:100%; height:100%; }
+.cld-panel.active { display:block; }
+.cld-panel svg { width:100%; height:100%; display:block; }
+
+/* ── SIDEBAR ── */
+.sidebar { width:340px; flex-shrink:0; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; box-shadow:-2px 0 12px rgba(0,0,0,.05); }
+.narration-area { flex:1; padding:1.2rem; overflow-y:auto; display:flex; flex-direction:column; gap:.8rem; }
+.step-lbl { font-family:'DM Mono',monospace; font-size:.57rem; text-transform:uppercase; letter-spacing:.13em; color:var(--teal); margin-bottom:.2rem; display:flex; align-items:center; gap:.4rem; }
+.narration-p { font-size:.83rem; line-height:1.75; color:var(--ink2); }
+.narration-p em { color:var(--teal); font-style:normal; font-weight:600; }
+.ev-box { background:var(--teal-l); border:1px solid #A0D8CE; border-left:3px solid var(--teal); border-radius:6px; padding:.7rem .85rem; font-size:.72rem; line-height:1.62; color:var(--ink2); }
+.ev-box b { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--teal); display:block; letter-spacing:.07em; text-transform:uppercase; margin-bottom:.22rem; }
+
+/* MP3 LOADER */
+.audio-status-panel { background:var(--teal-l); border:1px solid #A0D8CE; border-left:3px solid var(--teal); border-radius:7px; padding:.75rem .88rem; font-size:.72rem; color:var(--ink2); }
+.audio-status-panel b { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--teal); display:block; letter-spacing:.07em; text-transform:uppercase; margin-bottom:.28rem; }
+.audio-row { display:flex; align-items:center; gap:.55rem; margin-top:.35rem; }
+.audio-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; transition:background .4s; }
+.audio-dot.ok  { background:var(--teal); }
+.audio-dot.tts { background:var(--amber); }
+.audio-dot.checking { background:var(--border); animation:pulse 1s infinite; }
+.audio-row-lbl { font-family:'DM Mono',monospace; font-size:.62rem; }
+.mp3-ok   { color:var(--teal); }
+.mp3-miss { color:var(--border); }
+
+/* PROGRESS */
+.progress-wrap { padding:.45rem 1rem; border-top:1px solid var(--border); background:#FAFAF8; }
+.progress-track { height:3px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:.38rem; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--teal),var(--gold)); border-radius:3px; transition:width .4s ease; width:0%; }
+.progress-steps { display:flex; gap:3px; }
+.pip { flex:1; height:5px; border-radius:3px; background:var(--border); transition:background .25s; cursor:pointer; }
+.pip:hover { background:var(--ink3); }
+.pip.done   { background:var(--teal); opacity:.5; }
+.pip.active { background:var(--teal); }
+
+/* CONTROLS */
+.controls { padding:.68rem 1rem; border-top:1px solid var(--border); background:#FAFAF8; display:flex; flex-direction:column; gap:.42rem; }
+.ctrl-row { display:flex; gap:.4rem; align-items:center; }
+.btn { font-family:'DM Mono',monospace; font-size:.65rem; letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--border); background:var(--surface); color:var(--ink2); padding:.38rem .72rem; border-radius:6px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn:hover:not(:disabled) { background:var(--bg); border-color:var(--ink3); color:var(--ink); }
+.btn.primary { background:var(--teal); border-color:var(--teal); color:#fff; min-width:88px; }
+.btn.primary:hover:not(:disabled) { background:#0A8070; }
+.btn:disabled { opacity:.3; cursor:not-allowed; }
+.spd-lbl { font-family:'DM Mono',monospace; font-size:.58rem; color:var(--ink3); white-space:nowrap; }
+input[type=range] { flex:1; accent-color:var(--teal); cursor:pointer; }
+
+.sdot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--teal); animation:pulse 1s infinite; }
+.sdot.off { background:var(--border); animation:none; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="htitle">
+    <span>STEPS-INDIA · Causal Loop Diagrams</span>
+    Animated Narration — Co-Investigator Review
+  </div>
+  <a href="index.html" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--ink3);text-decoration:none;border:1px solid var(--border);padding:.25rem .65rem;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--ink3)'">← Overview</a>
+  <div class="header-right">
+    <div class="step-pill">Step <b id="stepNum">0</b> / <b id="stepTotal">12</b></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('htn',this)">HTN CLD</div>
+  <div class="tab" onclick="switchTab('dm',this)">DM CLD</div>
+  <div class="tab" onclick="switchTab('eces',this)">eCES Overlay</div>
+</div>
+
+<div class="audio-bar">
+  <div class="waveform paused" id="waveform"><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="audio-mode none" id="audioModeBadge">No audio loaded</div>
+  <span id="audio-file-lbl">Load MP3 files via the panel in the sidebar</span>
+</div>
+
+<div class="body">
+  <div class="canvas">
+    <!-- HTN CLD -->
+    <div class="cld-panel active" id="panel-htn">
+      <svg id="svg-htn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <!-- DM CLD -->
+    <div class="cld-panel" id="panel-dm">
+      <svg id="svg-dm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 680" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <!-- eCES OVERLAY -->
+    <div class="cld-panel" id="panel-eces">
+      <svg id="svg-eces" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="narration-area">
+      <div>
+        <div class="step-lbl"><span class="sdot off" id="sdot"></span><span id="slbl">Ready</span></div>
+        <div class="narration-p" id="ntext" style="color:var(--ink3);font-style:italic;">
+          Select a tab above, load your MP3 files, then press Play to begin.
+          Use ← → arrow keys or click the progress dots to navigate manually.
+        </div>
+      </div>
+      <div class="ev-box" id="evbox" style="display:none">
+        <b id="evlbl"></b><span id="evtext"></span>
+      </div>
+      <div class="audio-status-panel">
+        <b>🔊 Audio Status</b>
+        <div class="audio-row">
+          <div class="audio-dot checking" id="dot-htn"></div>
+          <span class="audio-row-lbl" id="lbl-htn">HTN — checking…</span>
+        </div>
+        <div class="audio-row">
+          <div class="audio-dot checking" id="dot-dm"></div>
+          <span class="audio-row-lbl" id="lbl-dm">DM — checking…</span>
+        </div>
+        <div class="audio-row">
+          <div class="audio-dot tts" id="dot-eces"></div>
+          <span class="audio-row-lbl" id="lbl-eces">eCES — browser TTS</span>
+        </div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
+      <div class="progress-steps" id="pips"></div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-row">
+        <button class="btn primary" id="btnPlay" onclick="handlePlay()">▶ Play</button>
+        <button class="btn" id="btnPrev" onclick="goPrev()" disabled>◀ Prev</button>
+        <button class="btn" id="btnNext" onclick="goNext()">Next ▶</button>
+        <button class="btn" onclick="doRestart()">↺</button>
+        <button class="btn" onclick="toggleFS()" title="Fullscreen (F)">⛶</button>
+      </div>
+      <div class="ctrl-row">
+        <span class="spd-lbl">TTS Speed</span>
+        <input type="range" id="spd" min="0.6" max="1.5" step="0.1" value="0.92"
+          oninput="document.getElementById('spdval').textContent=this.value+'×'">
+        <span class="spd-lbl" id="spdval">0.92×</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+
+// ── COLOUR PALETTE (light theme) ─────────────────────────────────────────────
+const C = {
+  psg:   "#1A4A7A", psgT:"#DDEEFF",
+  mech:  "#0A6E62", mechT:"#E8F5F3",
+  bar:   "#6B3A00", barT: "#FEF0E0",
+  sys:   "#1E3A6E", sysT: "#E8EEFA",
+  life:  "#1E5C1E", lifeT:"#EAF5EA",
+  neg:   "#7A1A1A", negT: "#FAEAEA",
+  out:   "#4A2800", outT: "#FEF0E0",
+  eces:  "#5A1A6E", ecesT:"#F5E8FF",
+  // arrow colours
+  apos:  "#1E7A3C", aneg:  "#9A2020", afb: "#C8860A",
+  aecesP:"#7A20C0", aecesN:"#C02070",
+};
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function el(tag, attrs={}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  return e;
+}
+
+function edgePt(n, toward) {
+  const dx=toward.cx-n.cx, dy=toward.cy-n.cy;
+  const ang=Math.atan2(dy,dx), ca=Math.cos(ang), sa=Math.sin(ang);
+  const t = Math.abs(ca)<1e-9 ? n.rh/Math.abs(sa)
+          : Math.abs(sa)<1e-9 ? n.rw/Math.abs(ca)
+          : Math.min(n.rw/Math.abs(ca), n.rh/Math.abs(sa));
+  return {x:n.cx+ca*t, y:n.cy+sa*t};
+}
+
+function addDefs(svg, prefix) {
+  const defs = el("defs");
+  [[`${prefix}mpos`,C.apos],[`${prefix}mneg`,C.aneg],[`${prefix}mfb`,C.afb],
+   [`${prefix}mep`,C.aecesP],[`${prefix}men`,C.aecesN]].forEach(([id,col])=>{
+    const m=el("marker",{id,markerWidth:"8",markerHeight:"7",refX:"7",refY:"3.5",orient:"auto"});
+    m.appendChild(el("polygon",{points:"0,0 8,3.5 0,7",fill:col})); defs.appendChild(m);
+  });
+  const filt=el("filter",{id:`${prefix}sh`,x:"-20%",y:"-20%",width:"140%",height:"140%"});
+  filt.appendChild(el("feDropShadow",{dx:"0",dy:"2",stdDeviation:"4","flood-color":"rgba(0,0,0,.18)"}));
+  defs.appendChild(filt);
+  svg.appendChild(defs);
+}
+
+function drawNode(svg, id, n, prefix) {
+  const g=el("g",{id:`${prefix}n-${id}`}); g.style.opacity="0"; g.style.transition="opacity .6s ease";
+  g.appendChild(el("rect",{
+    x:(n.cx-n.rw).toFixed(1), y:(n.cy-n.rh).toFixed(1),
+    width:(n.rw*2).toFixed(1), height:(n.rh*2).toFixed(1),
+    rx:"8", fill:n.fill, stroke:n.stroke||"#DDD8CE", "stroke-width":"1.2",
+    filter:`url(#${prefix}sh)`
+  }));
+  const lh=13.5, nl=n.lines.length;
+  n.lines.forEach((line,i)=>{
+    const ty=n.cy-(nl-1)*lh/2+i*lh;
+    const t=el("text",{x:n.cx,y:ty,"text-anchor":"middle","dominant-baseline":"central",
+      fill:n.textColor||"#fff","font-family":"'Inter',sans-serif",
+      "font-size":i===0?"11.5":"9","font-weight":i===0?"600":"400",
+      opacity:i===0?"1":i===nl-1&&nl>2?"0.55":"0.72"});
+    t.textContent=line; g.appendChild(t);
+  });
+  svg.appendChild(g);
+}
+
+function drawArrow(svg, id, fromN, toN, pol, ldx, ldy, cdx, cdy, prefix) {
+  const s=edgePt(fromN,toN);
+  const e0=edgePt(toN,fromN);
+  const ang=Math.atan2(toN.cy-fromN.cy,toN.cx-fromN.cx);
+  const ex=e0.x-Math.cos(ang)*8, ey=e0.y-Math.sin(ang)*8;
+  const mx=(s.x+ex)/2+cdx, my=(s.y+ey)/2+cdy;
+  const isEces = pol==="e+" || pol==="e-";
+  const col = pol==="e+"?C.aecesP : pol==="e-"?C.aecesN : pol==="+"?C.apos : pol==="-"?C.aneg : C.afb;
+  const mark = pol==="e+"?`url(#${prefix}mep)` : pol==="e-"?`url(#${prefix}men)` :
+               pol==="+"?`url(#${prefix}mpos)` : pol==="-"?`url(#${prefix}mneg)` : `url(#${prefix}mfb)`;
+
+  const g=el("g",{id:`${prefix}${id}`}); g.style.opacity="0"; g.style.transition="opacity .5s ease";
+  const dash = isEces ? "6,3" : pol==="fb"?"":"none";
+  const pathEl = el("path",{
+    d:`M${s.x.toFixed(1)},${s.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`,
+    fill:"none", stroke:col, "stroke-width":pol==="fb"||isEces?"2.5":"1.8",
+    "stroke-dasharray":dash, "marker-end":mark
+  });
+  g.appendChild(pathEl);
+  if(pol!=="fb"){
+    const t2=0.38;
+    const bx=(1-t2)**2*s.x+2*(1-t2)*t2*mx+t2**2*ex+ldx;
+    const by=(1-t2)**2*s.y+2*(1-t2)*t2*my+t2**2*ey+ldy;
+    const lc = pol==="e+"||pol==="+"?C.apos : pol==="e-"||pol==="-"?C.aneg : C.afb;
+    const lt=el("text",{x:bx.toFixed(1),y:by.toFixed(1),fill:lc,
+      "font-family":"'DM Mono',monospace","font-size":"11","font-weight":"700",
+      "text-anchor":"middle","dominant-baseline":"central"});
+    lt.textContent=(pol==="+"||pol==="e+")?"[+]":"[−]"; g.appendChild(lt);
+  }
+  svg.appendChild(g);
+}
+
+function drawBadge(svg, b, prefix) {
+  const g=el("g",{id:`${prefix}${b.id}`}); g.style.opacity="0"; g.style.transition="opacity .6s ease";
+  // background pill
+  const tw=b.text.length*5.8+16;
+  const rect=el("rect",{x:(b.x-tw/2).toFixed(1),y:(b.y-10).toFixed(1),
+    width:tw.toFixed(1),height:"19",rx:"9",fill:b.fb?"#FEF5E4":"#E8F5F3",
+    stroke:b.fb?"#D4A840":"#A0D8CE","stroke-width":"1"});
+  g.appendChild(rect);
+  const t=el("text",{x:b.x,y:b.y,"text-anchor":"middle","dominant-baseline":"central",
+    "font-family":"'DM Mono',monospace","font-size":"9","font-weight":"600",
+    fill:b.fb?C.afb:C.teal});
+  t.textContent=b.text; g.appendChild(t);
+  svg.appendChild(g);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HTN CLD DATA
+// ════════════════════════════════════════════════════════════════════════════
+const HTN_N = {
+  psg:{ lines:["PSG","Participation","(≥ monthly)"],  cx:125,cy:315,rw:72,rh:36,fill:C.psg },
+  se: { lines:["Self-Efficacy","for BP Mgmt"],         cx:318,cy:165,rw:76,rh:28,fill:C.mech },
+  dk: { lines:["Disease","Knowledge"],                 cx:318,cy:445,rw:76,rh:28,fill:C.mech },
+  ps: { lines:["Psych Stress"],                        cx:125,cy:495,rw:66,rh:24,fill:C.bar },
+  st: { lines:["Stigma /","Concealment"],              cx:125,cy:140,rw:66,rh:28,fill:C.bar },
+  lk: { lines:["Linkage","to Care"],                   cx:500,cy:140,rw:68,rh:28,fill:C.sys },
+  ec: { lines:["Economic","Barrier"],                  cx:500,cy:495,rw:68,rh:28,fill:C.sys },
+  ma: { lines:["Medication","Adherence"],              cx:500,cy:315,rw:76,rh:28,fill:C.life },
+  db: { lines:["Dietary","Behaviour"],                 cx:318,cy:575,rw:70,rh:28,fill:C.life },
+  pa: { lines:["Physical","Activity"],                 cx:318,cy:50, rw:70,rh:28,fill:C.life },
+  bm: { lines:["BP Self-","Monitoring"],               cx:500,cy:50, rw:72,rh:28,fill:C.life },
+  ti: { lines:["Therapeutic","Inertia"],               cx:668,cy:315,rw:72,rh:28,fill:C.neg },
+  out:{ lines:["Controlled BP","SBP < 140 mmHg","★ OUTCOME"],cx:668,cy:495,rw:80,rh:38,fill:C.out,stroke:C.afb },
+};
+
+const HTN_A = [
+  ["a01","psg","se", "+", -14,-10,-32,-12],["a02","psg","dk", "+", -14, 10,-32, 12],
+  ["a03","psg","ps", "-", -20,  0,-28,  0],["a04","psg","st", "-", -20,  0,-28,  0],
+  ["a05","psg","lk", "+",   0,-16,  8,-40],["a06","psg","ec", "-",   0, 14,  8, 40],
+  ["a07","se", "ma", "+",  14,  0, 22,  0],["a08","se", "db", "+", -16,  0,-28,  0],
+  ["a09","se", "pa", "+", -16,  0,-22,  0],["a10","dk", "ma", "+",  14,  0, 22,  0],
+  ["a11","dk", "bm", "+",  14,  0, 32,  0],["a12","st", "lk", "-",   0,-14,  0,  0],
+  ["a13","st", "ma", "-",  14,  0, 42,-22],["a14","lk", "ma", "+",  14,  0,  0,  0],
+  ["a15","lk", "ti", "-",   0,-14, 18,  0],["a16","ec", "ma", "-",  14,  0,  0,  0],
+  ["a17","ps", "out","-",   0, 16, 50, 38],["a18","ma", "out","+",  14,  0,  0,  0],
+  ["a19","db", "out","+",   0, 14, 56, 18],["a20","pa", "out","+",  18,  0,165,-18],
+  ["a21","bm", "out","+",  14,  0, 82,-18],["a22","ti", "out","-",  14,  0,  0,  0],
+  ["afb1","out","se","fb", -16, 0,-142,-55],["afb2","out","psg","fb",0,16,-142, 80],
+];
+
+const HTN_B = [
+  {id:"lb1",text:"R1 · Self-Efficacy Loop",x:555,y:195,fb:false},
+  {id:"lb2",text:"R2 · Social Engagement", x:100,y:622,fb:false},
+  {id:"lb3",text:"R3 · Stigma Dissolution",x:92, y:556,fb:false},
+  {id:"lb4",text:"B1 · Economic Ceiling",  x:395,y:622,fb:true},
+  {id:"lb5",text:"B2 · Inertia Ceiling",   x:558,y:372,fb:true},
+];
+
+const HTN_STEPS = [
+  {label:"HTN CLD — Overview",nodes:[],arrows:[],badges:[],active:[],
+   text:"Welcome to the STEPS-INDIA Hypertension Causal Loop Diagram — a systems map of how the peer support group intervention produces blood pressure control. This diagram covers 360 clusters and approximately 14,400 participants across six Indian sites. We will reveal each causal pathway step by step.",
+   ev:null},
+  {label:"Step 1 · PSG Participation",nodes:["psg"],arrows:[],badges:[],active:["psg"],
+   text:"The entry node is <em>PSG Participation</em> — regular attendance at peer support groups at least once a month. Groups of 8–14 patients meet monthly, facilitated by a trained peer leader with lived experience of hypertension. This is the single root driver from which all causal pathways originate.",
+   ev:{lbl:"Trial Anchor",txt:"CHW-LMIC subgroup: SBP −4.29 mmHg (95% CI −6.74 to −1.85). Avery BJGP 2025: lifestyle education groups −4.8 mmHg (n=13,976)."}},
+  {label:"Step 2 · Self-Efficacy Pathway",nodes:["se"],arrows:["a01"],badges:[],active:["se"],
+   text:"<em>PSG</em> raises Self-Efficacy for blood pressure management. Peer leaders with well-controlled hypertension provide vicarious learning — seeing someone like yourself succeed raises your belief in your own capacity to manage medication, diet, and exercise.",
+   ev:{lbl:"Mechanism Evidence",txt:"Fisher 2017: 58.8% of PSG effect mediated through self-efficacy. Bandura SCT — mastery, vicarious learning, social persuasion."}},
+  {label:"Step 3 · Disease Knowledge",nodes:["dk"],arrows:["a02"],badges:[],active:["dk"],
+   text:"<em>PSG</em> sessions build Disease Knowledge — understanding BP targets, why antihypertensives must continue even when feeling well, and how lifestyle affects blood pressure. This feeds forward into two key clinical behaviours.",
+   ev:{lbl:"Education Evidence",txt:"Peer DSME: SMD −0.41 on adherence (Patil SR). Education component in 31/34 PSG studies (STEPS-INDIA scoping review)."}},
+  {label:"Step 4 · Psychosocial Pathways",nodes:["ps","st"],arrows:["a03","a04"],badges:[],active:["ps","st"],
+   text:"<em>PSG</em> reduces two barriers. Psychological Stress — chronic stress elevates cortisol and sympathetic tone, directly raising blood pressure. Group support reduces this burden. Stigma and Concealment — groups normalise NCD diagnosis, reducing reluctance to take medication publicly or attend clinics.",
+   ev:{lbl:"Evidence",txt:"Cortisol-SNS: ~4–8 mmHg SBP with stress reduction. Kerala SHG-HTN: stigma reduction cited by 74% of members."}},
+  {label:"Step 5 · Linkage & Economic Pathways",nodes:["lk","ec"],arrows:["a05","a06"],badges:[],active:["lk","ec"],
+   text:"<em>PSG</em> improves Linkage to Care through peer escort, referrals, and clinic reminders. It reduces Economic Barrier through SHG savings linkage and Jan Aushadhi guidance — important because out-of-pocket costs average ₹9,014 per quarter for HTN management in India.",
+   ev:{lbl:"India Evidence",txt:"IHCI+CHW: 37%→68% 12-month retention. SHG microfinance analogue (BIGPIC Kenya): additional −5 mmHg SBP."}},
+  {label:"Step 6 · Medication Adherence Hub",nodes:["ma"],arrows:["a07","a10","a13","a14","a16"],badges:[],active:["ma"],
+   text:"Medication <em>Adherence</em> is the primary clinical hub — receiving inputs from five upstream pathways: self-efficacy, disease knowledge, stigma reduction, linkage, and economic barrier. Higher adherence produces direct pharmacological benefit within 4–8 weeks.",
+   ev:{lbl:"Adherence Evidence",txt:"OR 1.35 (Patil meta-analysis). Kerala SHG-HTN: 81.5% vs 51.9% control — strongest India-specific estimate."}},
+  {label:"Step 7 · Lifestyle Pathways",nodes:["db","pa","bm"],arrows:["a08","a09","a11"],badges:[],active:["db","pa","bm"],
+   text:"Self-efficacy and disease knowledge drive three lifestyle pathways. Dietary Behaviour — salt reduction worth −2 to −5 mmHg. Physical Activity — group walking reduces SBP by −4 to −7 mmHg. BP Self-Monitoring — group cuff practice enables early detection and timely care-seeking.",
+   ev:{lbl:"Lifestyle Effect Sizes",txt:"Salt: −2 to −5 mmHg. DASH: −8 to −11 mmHg. Exercise: −4 to −7 mmHg. Group exercise: −7.2 mmHg (Avery 2025)."}},
+  {label:"Step 8 · Stigma → Linkage → Inertia",nodes:["ti"],arrows:["a12","a15","a22"],badges:[],active:["ti"],
+   text:"Stigma reduction improves Linkage to Care. Linkage reduces Therapeutic Inertia — clinician-side failure to intensify treatment when targets are unmet. In India, 80–90% of encounters occur without intensification. <em>PSG</em> increases clinic contact but needs supply-side IHCI protocol changes to fully overcome this.",
+   ev:{lbl:"Therapeutic Inertia",txt:"India: 80–90% encounters without intensification. IHCI standardised protocols: supply-side complement to PSG demand-side."}},
+  {label:"Step 9 · Central Outcome",nodes:["out"],arrows:["a18","a19","a20","a21","a17"],badges:[],active:["out"],
+   text:"Controlled Blood Pressure — SBP below 140 mmHg — receives five converging inputs: medication adherence, dietary behaviour, physical activity, BP self-monitoring, and reduced psychological stress. The <em>PSG</em> effect translates to −4.8 mmHg SBP on average.",
+   ev:{lbl:"Outcome Estimates",txt:"Avery BJGP 2025: −4.8 mmHg (26 groups). Jeyaraman 2018: −7.52 mmHg. CHW-LMIC scoping: −4.29 mmHg (95% CI −6.74 to −1.85)."}},
+  {label:"Step 10 · R1 — Self-Efficacy Loop",nodes:[],arrows:["afb1"],badges:["lb1"],active:[],
+   text:"Feedback loop R1 — Self-Efficacy Amplification. Controlled blood pressure feeds back positively to self-efficacy: seeing your BP normalise is itself a mastery experience reinforcing continued adherence. This is the core growth engine — self-sustaining once activated.",
+   ev:{lbl:"Design Implication",txt:"Front-load sessions with visible BP feedback. Generate the first mastery signal before dropout risk peaks at ~3 months."}},
+  {label:"Step 11 · R2 — Social Engagement Loop",nodes:[],arrows:["afb2"],badges:["lb2"],active:[],
+   text:"Feedback loop R2 — Social Engagement. Members who achieve BP control become advocates and recruit others. Selective attrition risk: struggling members may disengage. Buddy systems and peer leader home visits prevent this.",
+   ev:{lbl:"Loop R2 Evidence",txt:"Kerala SHG-HTN: members with controlled BP at 6 months had significantly higher 12-month attendance."}},
+  {label:"Step 12 · Complete HTN CLD",nodes:[],arrows:[],badges:["lb3","lb4","lb5"],active:[],
+   text:"Complete HTN CLD: 13 nodes · 24 arrows · 3R+2B loops. R3 (Stigma Dissolution) is slow-cycling over months — short trials underestimate long-term benefit. B1 (Economic Ceiling) — <em>PSG</em> partially addresses but cannot substitute for free medicine supply. B2 (Inertia) needs both <em>PSG</em> and IHCI together.",
+   ev:{lbl:"Full Model",txt:"13 nodes · 24 arrows (22 forward + 2 feedback) · 3R+2B · Central effect: −4.8 mmHg SBP."}}
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// DM CLD DATA
+// ════════════════════════════════════════════════════════════════════════════
+const DM_N = {
+  psg:{ lines:["PSG","Participation","(≥ monthly)"],  cx:125,cy:330,rw:72,rh:36,fill:C.psg },
+  se: { lines:["Self-Efficacy","DM Mgmt"],             cx:318,cy:165,rw:76,rh:28,fill:C.mech },
+  dk: { lines:["Disease","Knowledge"],                 cx:318,cy:458,rw:76,rh:28,fill:C.mech },
+  ps: { lines:["Diabetes","Distress"],                 cx:125,cy:510,rw:72,rh:28,fill:C.bar },
+  st: { lines:["Stigma /","Concealment"],              cx:125,cy:148,rw:66,rh:28,fill:C.bar },
+  lk: { lines:["Linkage","to Care"],                   cx:500,cy:148,rw:68,rh:28,fill:C.sys },
+  ec: { lines:["Economic","Barrier"],                  cx:500,cy:510,rw:68,rh:28,fill:C.sys },
+  ma: { lines:["Medication","Adherence"],              cx:500,cy:330,rw:76,rh:28,fill:C.life },
+  db: { lines:["Dietary","Behaviour"],                 cx:318,cy:588,rw:70,rh:28,fill:C.life },
+  pa: { lines:["Physical","Activity"],                 cx:318,cy:58, rw:70,rh:28,fill:C.life },
+  sm: { lines:["SMBG /","Monitoring"],                 cx:500,cy:58, rw:72,rh:28,fill:C.life },
+  ti: { lines:["Therapeutic","Inertia"],               cx:668,cy:330,rw:72,rh:28,fill:C.neg },
+  ca: { lines:["Complication","Awareness"],            cx:668,cy:148,rw:72,rh:28,fill:C.mech },
+  smbg_note:{ lines:["SMBG","strips cost"],           cx:668,cy:510,rw:68,rh:28,fill:C.bar },
+  out:{ lines:["Glycaemic Control","HbA1c < 7%","★ OUTCOME"],cx:668,cy:480,rw:80,rh:38,fill:C.out,stroke:C.afb },
+};
+
+// Simplified DM (14 nodes, 30 arrows, 4R+2B)
+const DM_A = [
+  ["a01","psg","se", "+", -14,-10,-32,-12],["a02","psg","dk", "+", -14, 10,-32, 12],
+  ["a03","psg","ps", "-", -20,  0,-28,  0],["a04","psg","st", "-", -20,  0,-28,  0],
+  ["a05","psg","lk", "+",   0,-16,  8,-40],["a06","psg","ec", "-",   0, 14,  8, 40],
+  ["a07","se", "ma", "+",  14,  0, 22,  0],["a08","se", "db", "+", -16,  0,-28,  0],
+  ["a09","se", "pa", "+", -16,  0,-22,  0],["a10","dk", "ma", "+",  14,  0, 22,  0],
+  ["a11","dk", "sm", "+",  14,  0, 32,  0],["a12","st", "lk", "-",   0,-14,  0,  0],
+  ["a13","st", "ma", "-",  14,  0, 42,-22],["a14","lk", "ma", "+",  14,  0,  0,  0],
+  ["a15","lk", "ti", "-",   0,-14, 18,  0],["a16","ec", "ma", "-",  14,  0,  0,  0],
+  ["a17","ps", "out","-",   0, 16, 50, 38],["a18","ma", "out","+",  14,  0,  0,  0],
+  ["a19","db", "out","+",   0, 14, 56, 18],["a20","pa", "out","+",  18,  0,165,-18],
+  ["a21","sm", "out","+",  14,  0, 82,-18],["a22","ti", "out","-",  14,  0,  0,  0],
+  ["a23","ca", "lk", "+",  14,  0,  0,  0],["a24","dk", "ca", "+",  14,  0, 40,-15],
+  ["a25","se", "ca", "+",  14,  0, 50,-20],["a26","ps", "ma", "-",  14,  0, 40,-15],
+  ["afb1","out","se","fb", -16, 0,-142,-55],["afb2","out","psg","fb",0,16,-142, 80],
+  ["afb3","out","ps","fb",  16,  0,  80, 60],
+];
+
+const DM_B = [
+  {id:"lb1",text:"R1 · Self-Efficacy Loop",  x:555,y:210,fb:false},
+  {id:"lb2",text:"R2 · Distress Reduction",  x:100,y:635,fb:false},
+  {id:"lb3",text:"R3 · Complication Aware.", x:680,y:222,fb:false},
+  {id:"lb4",text:"R4 · Social Engagement",   x:100,y:655,fb:false},
+  {id:"lb5",text:"B1 · Inertia Ceiling",     x:558,y:388,fb:true},
+  {id:"lb6",text:"B2 · SMBG Cost Ceiling",   x:400,y:635,fb:true},
+];
+
+const DM_STEPS = [
+  {label:"DM CLD — Overview",nodes:[],arrows:[],badges:[],active:[],
+   text:"Welcome to the STEPS-INDIA Diabetes Mellitus Causal Loop Diagram. This diagram shares 10 nodes with the HTN CLD — meaning that for the 1,800–2,160 comorbid HTN+DM participants in STEPS-INDIA, PSG participation activates both diagrams simultaneously.",
+   ev:null},
+  {label:"Step 1 · PSG Participation",nodes:["psg"],arrows:[],badges:[],active:["psg"],
+   text:"The entry node is <em>PSG Participation</em> — same structure as the HTN CLD. The key difference is that DM groups incorporate specific elements: SMBG demonstration, dietary carbohydrate counselling, complication screening discussions, and PAID-5 diabetes distress screening.",
+   ev:{lbl:"DM PSG Evidence",txt:"Jeyaraman 2018 (3 DM trials): −0.90% HbA1c. MoPoTsyo Cambodia peer model: −0.53% HbA1c. ST2EP Mali: −1.0% HbA1c."}},
+  {label:"Step 2 · Self-Efficacy + Disease Knowledge",nodes:["se","dk"],arrows:["a01","a02"],badges:[],active:["se","dk"],
+   text:"<em>PSG</em> raises Self-Efficacy for DM management and builds Disease Knowledge — both shared nodes with the HTN CLD. The DM-specific content includes insulin injection technique, foot care, sick-day rules, and interpretation of SMBG readings.",
+   ev:{lbl:"DM Self-Efficacy",txt:"Fisher 2017: 58.8% of PSG effect mediated through self-efficacy — applies equally to DM and HTN arms. PAID-5 screening identifies distress impairing self-efficacy."}},
+  {label:"Step 3 · Diabetes Distress",nodes:["ps"],arrows:["a03"],badges:[],active:["ps"],
+   text:"Diabetes Distress — a DM-unique node replacing generic psychological stress. Distress in DM is a specific construct: worry about complications, burnout from the relentless demands of self-management, fear of hypoglycaemia. It directly impairs medication adherence and is measurable with the PAID-5 tool.",
+   ev:{lbl:"Diabetes Distress Evidence",txt:"PAID-5 score: clinically significant distress in ~45% of DM patients in India. Distress reduces adherence OR 0.65 (inverse of OR 1.35 for adherence in non-distressed patients)."}},
+  {label:"Step 4 · Complication Awareness",nodes:["ca","st"],arrows:["a04","a24","a25"],badges:[],active:["ca"],
+   text:"Complication Awareness is a DM-unique node — understanding retinopathy, nephropathy, neuropathy, and cardiovascular risk motivates sustained behaviour change. Disease knowledge and self-efficacy both feed into complication awareness, which then drives Linkage to Care for screening services. This creates the R3 reinforcing loop unique to DM.",
+   ev:{lbl:"Complication Awareness",txt:"Awareness of DM complications linked to sustained adherence (prospective cohort, Karter 2018). Screening at 3-monthly PSG sessions is a feasible delivery mechanism."}},
+  {label:"Step 5 · Shared Pathways",nodes:["lk","ec","ma"],arrows:["a05","a06","a07","a10","a13","a14","a16","a26"],badges:[],active:["ma"],
+   text:"The system-level and adherence pathways are identical to the HTN CLD — Linkage to Care, Economic Barrier, and the convergence at Medication Adherence. The additional DM-specific arrow is Diabetes Distress directly impairing medication adherence, creating a bypassing route that the PAID-5 screening in <em>PSG</em> sessions can intercept.",
+   ev:{lbl:"Adherence Estimate",txt:"DM medication adherence OR 1.35 (Patil SR). IDPP-1 India: intensive lifestyle PSG reduced DM incidence 28.5% vs 58.5% 3-year conversion."}},
+  {label:"Step 6 · Lifestyle + SMBG",nodes:["db","pa","sm"],arrows:["a08","a09","a11"],badges:[],active:["db","pa","sm"],
+   text:"Lifestyle pathways mirror the HTN CLD. The key DM-specific difference is SMBG — Self-Monitoring of Blood Glucose. SMBG strips are not available in Jan Aushadhi pharmacies, making the economic barrier particularly acute for DM. Group-level SMBG demonstration at sessions can partially substitute for individual strip purchase.",
+   ev:{lbl:"DM Lifestyle Effects",txt:"DASH + calorie restriction: −0.5 to −1.0% HbA1c. Aerobic exercise: −0.7% HbA1c. Group PA: −0.8% HbA1c (Umpierre 2011 Cochrane update)."}},
+  {label:"Step 7 · Inertia + Outcome",nodes:["ti","out"],arrows:["a15","a22","a18","a19","a20","a21","a17"],badges:[],active:["out"],
+   text:"Glycaemic Control — HbA1c below 7% — is the central outcome. It receives inputs from all lifestyle and adherence pathways. Therapeutic Inertia in DM is severe: median time to treatment intensification in India exceeds one year when targets are unmet. This creates a strong balancing loop that PSG alone cannot overcome.",
+   ev:{lbl:"DM Outcome Evidence",txt:"Jeyaraman 2018 (3 DM trials): −0.90% HbA1c (95% CI −1.56 to −0.23). MoPoTsyo: −0.53% HbA1c. Comorbid HTN+DM: simultaneous activation of both CLD pathways."}},
+  {label:"Step 8 · R1 — Self-Efficacy + R2 — Distress",nodes:[],arrows:["afb1","afb3"],badges:["lb1","lb2"],active:[],
+   text:"Two reinforcing feedback loops. R1 — Self-Efficacy: controlled glycaemia feeds back to self-efficacy, creating the same growth engine as in HTN but with a longer delay of 8–12 weeks for HbA1c changes. R2 — Distress Reduction: controlled glycaemia reduces diabetes distress, which in turn improves adherence — a DM-unique reinforcing loop.",
+   ev:{lbl:"R1+R2 Design",txt:"R2 is unique to DM CLD. Argues for PAID-5 screening at baseline and 3 months to identify members at risk of distress-mediated loop collapse. High-distress members need intensive peer leader contact."}},
+  {label:"Step 9 · R3 + R4 + Balancing Loops",nodes:[],arrows:["afb2","a23"],badges:["lb3","lb4","lb5","lb6"],active:[],
+   text:"R3 — Complication Awareness: controlled glycaemia reduces complication risk, sustaining awareness-driven behaviour change. R4 — Social Engagement: same as HTN. B1 — Therapeutic Inertia ceiling: >1 year median delay in India. B2 — SMBG Cost Ceiling: strips not in Jan Aushadhi, creating a DM-specific economic barrier not present in HTN.",
+   ev:{lbl:"Full DM Model",txt:"14 nodes · 30 arrows (27 forward + 3 feedback) · 4R+2B. Central effect: −0.90% HbA1c (Jeyaraman 2018). Comorbid participants: both CLD graphs activate simultaneously."}}
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// eCES OVERLAY DATA  (builds on HTN base, adds 6 intervention nodes)
+// ════════════════════════════════════════════════════════════════════════════
+const ECES_N = {
+  // PSG base (smaller, repositioned for eCES overlay)
+  psg:{ lines:["PSG Base"],                            cx:150,cy:340,rw:60,rh:30,fill:C.psg },
+  se: { lines:["Self-Efficacy"],                       cx:310,cy:200,rw:65,rh:26,fill:C.mech },
+  ma: { lines:["Med Adherence"],                       cx:470,cy:340,rw:68,rh:26,fill:C.life },
+  out:{ lines:["Controlled BP/BG","★ OUTCOME"],        cx:680,cy:450,rw:75,rh:32,fill:C.out,stroke:C.afb },
+  db: { lines:["Dietary Beh."],                        cx:310,cy:500,rw:65,rh:24,fill:C.life },
+  pa: { lines:["Physical Activity"],                   cx:470,cy:160,rw:68,rh:24,fill:C.life },
+  lk: { lines:["Linkage to Care"],                     cx:600,cy:200,rw:65,rh:24,fill:C.sys },
+  st: { lines:["Stigma"],                              cx:150,cy:180,rw:55,rh:24,fill:C.bar },
+  ec: { lines:["Econ. Barrier"],                       cx:310,cy:590,rw:65,rh:24,fill:C.sys },
+  // eCES intervention nodes
+  hd: { lines:["Health Diary","(Part A)"],             cx:80, cy:560,rw:62,rh:30,fill:C.eces },
+  fc: { lines:["Family NCD","Coach (Part A)"],         cx:80, cy:460,rw:62,rh:32,fill:C.eces },
+  nc: { lines:["NCD Club","(Part B)"],                 cx:80, cy:90, rw:62,rh:30,fill:C.eces },
+  cb: { lines:["Capacity","Building (Part C)"],        cx:780,cy:200,rw:65,rh:30,fill:C.eces },
+  cm: { lines:["Comms Aid","(Part C)"],                cx:780,cy:340,rw:65,rh:30,fill:C.eces },
+};
+
+const ECES_A = [
+  // PSG base arrows (light, background)
+  ["b01","psg","se", "+",  -12,-8, -20,-10],["b02","psg","ma", "+",   0, 14,  -5, 30],
+  ["b03","se", "ma", "+",   12, 0,  20,  0],["b04","ma", "out","+",  12, 0,   0,  0],
+  ["b05","se", "db", "+",  -12, 0, -20,  0],["b06","db", "out","+",   0,12,  60, 20],
+  ["b07","pa", "out","+",   12, 0,  80,-20],["b08","lk", "ma", "+",   12, 0,   0,  0],
+  ["b09","st", "ma", "-",   12, 0,  40,-15],["b10","ec", "ma", "-",   12, 0,   0,  0],
+  // eCES arrows (coloured, dashed)
+  ["e01","hd","se",  "e+", -10,-8, -20,-10],["e02","hd","ma",  "e+",  12, 0,  20,  0],
+  ["e03","hd","out", "e+",  12, 0, 100, 30],
+  ["e04","fc","ma",  "e+",  12, 0,  20,  0],["e05","fc","db",  "e+",  12, 8,  20, 20],
+  ["e06","fc","ec",  "e-",  12, 0,  20, 30],["e07","fc","se",  "e+",  12,-8,  30,-20],
+  ["e08","nc","pa",  "e+",  12, 0,  20,  0],["e09","nc","db",  "e+",  12, 8,  20, 30],
+  ["e10","nc","lk",  "e+",  12, 0,  30, 20],["e11","nc","st",  "e-",  12, 8,   0, 20],
+  ["e12","cb","ma",  "e+", -12, 0, -40,  0],["e13","cb","se",  "e+", -12,-8, -40,-15],
+  ["e14","cm","ma",  "e+", -12, 0, -30,  0],["e15","cm","se",  "e+", -12,-8, -30,-15],
+  ["e16","cm","st",  "e-", -12, 0, -60, 20],
+];
+
+const ECES_B = [
+  {id:"lb1",text:"Part A: Patient & Family",x:80, y:398,fb:false},
+  {id:"lb2",text:"Part B: Community",        x:80, y:50, fb:false},
+  {id:"lb3",text:"Part C: System Readiness", x:780,y:150,fb:false},
+];
+
+const ECES_STEPS = [
+  {label:"eCES Overlay — Overview",nodes:[],arrows:[],badges:[],active:[],
+   text:"The eCES — Enhanced Community Engagement Strategy — adds five new intervention components on top of the PSG base. These components are organised as Part A (patient and family), Part B (community), and Part C (system readiness). We now reveal how each component enters the causal system.",
+   ev:null},
+  {label:"Step 1 · PSG Base",nodes:["psg","se","ma","out","db","pa","lk","st","ec"],arrows:["b01","b02","b03","b04","b05","b06","b07","b08","b09","b10"],badges:[],active:["psg"],
+   text:"The <em>PSG</em> base is already established — these are the core pathways from the HTN and DM CLDs. All eCES components add new arrows into this existing system; they do not replace the PSG base but amplify or supplement it.",
+   ev:{lbl:"PSG Base",txt:"24 arrows (HTN) / 30 arrows (DM). Central effect: −4.29 mmHg SBP / −0.90% HbA1c (CHW-LMIC subgroup)."}},
+  {label:"Step 2 · Part A — Health Diary",nodes:["hd"],arrows:["e01","e02","e03"],badges:["lb1"],active:["hd"],
+   text:"The Health Diary is a structured self-monitoring and goal-setting tool given to each patient. It enters the system at three points: raising self-efficacy through visible progress tracking, supporting medication adherence through pill count columns, and directly linking goal achievement to outcomes. It also creates a concrete focal point for peer leader home visits.",
+   ev:{lbl:"Health Diary Evidence",txt:"Tucker 2017 IPD: −3.2 mmHg SBP with structured self-monitoring. Raj India RCT: pill count adherence p=0.007. Ophelia Chandigarh: participatory design reduced myth-adherence gap."}},
+  {label:"Step 3 · Part A — Family NCD Coach",nodes:["fc"],arrows:["e04","e05","e06","e07"],badges:[],active:["fc"],
+   text:"The Family NCD Coach trains one family member as a domestic adherence supporter and cook. It enters the system at four points: medication adherence through daily reminder and supervision, dietary behaviour through the household food preparation chain, economic barrier through family-level medicine procurement, and self-efficacy through enhanced social support.",
+   ev:{lbl:"Family Coach Evidence",txt:"Scheurer SR: 9/14 family intervention studies showed positive effects. K-DPP: family involvement improved dietary adherence. Garg 2023: 70.3% vs 55.1% adherence with family support."}},
+  {label:"Step 4 · Part B — NCD Club",nodes:["nc"],arrows:["e08","e09","e10","e11"],badges:["lb2"],active:["nc"],
+   text:"The NCD Club is an inter-<em>PSG</em> community platform that meets quarterly to share stories and plan collective activities. It enters the system at four points: physical activity through group walking events, dietary behaviour through cooking demonstrations, linkage to care through collective clinic attendance, and stigma reduction through public normalisation of NCD.",
+   ev:{lbl:"NCD Club Evidence",txt:"BMC PH 18-LMIC meta-analysis: RR 1.48 for community platform vs control. Qualitative MAS literature: community ownership reduces stigma concealment. Note: weakest evidence component — theoretical assumption."}},
+  {label:"Step 5 · Part C — Capacity Building",nodes:["cb"],arrows:["e12","e13"],badges:["lb3"],active:["cb"],
+   text:"Capacity Building trains peer leaders, ASHAs, and CHOs on updated clinical content and facilitation skills. In the CLD, it acts as a fidelity multiplier — entering through medication adherence and self-efficacy. Higher-trained peer leaders produce larger loop effects. Modelled as a multiplier: 0.5× with poor fidelity, 1.2× with high fidelity.",
+   ev:{lbl:"Capacity Building Evidence",txt:"Garg 2023 Chhattisgarh: trained peer educator screening 80.2% vs 37.9% control. Bihar: knowledge improvement 12.9→22.1 percentile but skill transfer 54.1%. Fidelity multiplier: 0.5×–1.2×."}},
+  {label:"Step 6 · Part C — Communication Aid",nodes:["cm"],arrows:["e14","e15","e16"],badges:[],active:["cm"],
+   text:"The Communication Aid is a culturally-adapted, low-literacy visual tool for myth correction and adherence support. It enters the system at three points: medication adherence through myth correction about antihypertensives, self-efficacy through literacy-appropriate goal framing, and stigma reduction through normalising NCD management in the community. Modelled as a literacy multiplier: 1.1×–1.3× in low-literacy settings.",
+   ev:{lbl:"Comms Aid Evidence",txt:"Ophelia India: participatory literacy design −2.92 vs −0.72 mmHg (mHealth tailored vs standard). Scoping review: 12/34 studies cite culturally-adapted materials as adherence mediator. Myth correction OR 1.1–1.2."}},
+  {label:"Step 7 · Complete eCES Overlay",nodes:[],arrows:[],badges:[],active:[],
+   text:"The complete eCES overlay adds 16 arrows to the HTN base (17 for DM) across 5 additional intervention nodes in 3 tiers. The key design insight from the loop structure: Capacity Building multiplies all loops simultaneously — poor peer leader training collapses all eCES pathways at once. Health Diary and Family Coach most directly amplify the critical R1 self-efficacy loop. NCD Club is the weakest evidence component and should be treated as structural uncertainty.",
+   ev:{lbl:"eCES Full Model",txt:"eCES = PSG base + 16 HTN arrows / 17 DM arrows. 5 intervention nodes: Health Diary, Family Coach (Part A), NCD Club (Part B), Capacity Building, Comms Aid (Part C). Epistemic gradient: PSG = trial evidence; eCES add-ons = theoretical + proxy evidence."}}
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// SVG BUILDERS
+// ════════════════════════════════════════════════════════════════════════════
+function buildCLD(svgId, nodeMap, arrowArr, badgeArr, prefix) {
+  const svg = document.getElementById(svgId);
+  addDefs(svg, prefix);
+  badgeArr.forEach(b => drawBadge(svg, b, prefix));
+  arrowArr.forEach(([id,fk,tk,pol,ldx,ldy,cdx,cdy]) => {
+    if(!nodeMap[fk]||!nodeMap[tk]) return;
+    drawArrow(svg,id,nodeMap[fk],nodeMap[tk],pol,ldx,ldy,cdx,cdy,prefix);
+  });
+  Object.entries(nodeMap).forEach(([k,n]) => drawNode(svg,k,n,prefix));
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB + STEP STATE
+// ════════════════════════════════════════════════════════════════════════════
+const TABS = {
+  htn:  { nodeMap:HTN_N, arrowArr:HTN_A, badgeArr:HTN_B, steps:HTN_STEPS,  prefix:"h_" },
+  dm:   { nodeMap:DM_N,  arrowArr:DM_A,  badgeArr:DM_B,  steps:DM_STEPS,   prefix:"d_" },
+  eces: { nodeMap:ECES_N,arrowArr:ECES_A,badgeArr:ECES_B,steps:ECES_STEPS, prefix:"e_" },
+};
+
+let activeTab = "htn";
+let cur = 0;
+let builtTabs = {};
+
+function switchTab(name, tabEl) {
+  stopAudio();
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  tabEl.classList.add("active");
+  document.querySelectorAll(".cld-panel").forEach(p => p.classList.remove("active"));
+  document.getElementById(`panel-${name}`).classList.add("active");
+
+  // Build SVG on first use
+  if (!builtTabs[name]) {
+    const t = TABS[name];
+    buildCLD(`svg-${name}`, t.nodeMap, t.arrowArr, t.badgeArr, t.prefix);
+    builtTabs[name] = true;
+  }
+
+  activeTab = name;
+  cur = 0;
+  resetAll();
+  applyStep(0);
+}
+
+function getT()  { return TABS[activeTab]; }
+function getP()  { return getT().prefix; }
+function getSteps() { return getT().steps; }
+
+function setVis(id, v) { const e=document.getElementById(id); if(e) e.style.opacity=v?"1":"0"; }
+
+function accumulate(idx) {
+  const s = getSteps()[idx], p = getP();
+  s.nodes.forEach(id => setVis(`${p}n-${id}`, true));
+  s.arrows.forEach(id => setVis(`${p}${id}`, true));
+  s.badges.forEach(id => setVis(`${p}${id}`, true));
+}
+
+function resetAll() {
+  const p = getP();
+  const svgId = `svg-${activeTab}`;
+  document.querySelectorAll(`#${svgId} g`).forEach(g => g.style.opacity="0");
+  clearActive();
+}
+
+function clearActive() {
+  document.querySelectorAll("[data-active]").forEach(e => {
+    const r = e.querySelector("rect"); if(r) r.removeAttribute("filter");
+    e.removeAttribute("data-active");
+  });
+  const p = getP();
+  // restore filters
+  document.querySelectorAll(`[id^="${p}n-"]`).forEach(g => {
+    const r = g.querySelector("rect");
+    if(r) r.setAttribute("filter", `url(#${p}sh)`);
+  });
+}
+
+function renderStep(idx) {
+  const s = getSteps()[idx], p = getP();
+  clearActive();
+  s.active.forEach(id => {
+    const g = document.getElementById(`${p}n-${id}`); if(!g) return;
+    g.setAttribute("data-active","1");
+    const r = g.querySelector("rect");
+    if(r) r.setAttribute("filter", `url(#${p}sh) drop-shadow(0 0 8px rgba(10,110,98,.6))`);
+  });
+  // sidebar
+  document.getElementById("slbl").textContent = s.label;
+  const nt = document.getElementById("ntext");
+  nt.style.color=""; nt.style.fontStyle="";
+  nt.innerHTML = s.text;
+  const evbox = document.getElementById("evbox");
+  if(s.ev){ evbox.style.display="block"; document.getElementById("evlbl").textContent=s.ev.lbl; document.getElementById("evtext").textContent=s.ev.txt; }
+  else evbox.style.display="none";
+  const total = getSteps().length;
+  const pct = Math.round(((idx+1)/total)*100);
+  document.getElementById("pfill").style.width=pct+"%";
+  document.getElementById("stepNum").textContent=idx+1;
+  document.getElementById("stepTotal").textContent=total;
+  document.getElementById("btnPrev").disabled=idx<=0;
+  document.getElementById("btnNext").disabled=idx>=total-1;
+  // pips
+  const pips=document.getElementById("pips");
+  pips.innerHTML="";
+  for(let i=0;i<total;i++){
+    const d=document.createElement("div");
+    d.className="pip"+(i<idx?" done":i===idx?" active":"");
+    const ii=i; d.onclick=()=>{ stopAudio(); cur=ii; resetAll(); for(let j=0;j<=ii;j++)accumulate(j); renderStep(ii); };
+    pips.appendChild(d);
+  }
+}
+
+function applyStep(idx) { accumulate(idx); renderStep(idx); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUDIO ENGINE — web deployment, path-based
+// Audio paths: audio/htn/step_01.mp3 … audio/dm/step_01.mp3
+// eCES uses browser TTS (no files needed)
+// ════════════════════════════════════════════════════════════════════════════
+
+// How many steps each tab has
+const TAB_STEPS_COUNT = { htn:12, dm:9, eces:7 };
+// Audio folder per tab (null = browser TTS only)
+const AUDIO_FOLDERS = { htn:"audio/htn", dm:"audio/dm", eces:null };
+// Cache of confirmed-existing audio URLs { "htn_1": "audio/htn/step_01.mp3", … }
+const audioCache = {};
+
+// Probe a single audio file — returns promise resolving to true/false
+// Uses Audio element load attempt (works on GitHub Pages, avoids CORS/HEAD issues)
+function probeOne(url) {
+  return new Promise(resolve => {
+    const a = new Audio();
+    const done = (ok) => { a.src=""; resolve(ok); };
+    a.oncanplaythrough = () => done(true);
+    a.onerror          = () => done(false);
+    // Timeout fallback — if browser stalls (e.g. slow network), assume missing
+    const t = setTimeout(() => done(false), 6000);
+    a.oncanplaythrough = () => { clearTimeout(t); done(true); };
+    a.onerror          = () => { clearTimeout(t); done(false); };
+    a.preload = "metadata";  // load just enough to confirm existence
+    a.src = url;
+  });
+}
+
+async function probeAudio(tab) {
+  const folder = AUDIO_FOLDERS[tab];
+  const count  = TAB_STEPS_COUNT[tab];
+  const dot    = document.getElementById(`dot-${tab}`);
+  const lbl    = document.getElementById(`lbl-${tab}`);
+
+  if (!folder) {
+    dot.className="audio-dot tts";
+    lbl.textContent=`${tab.toUpperCase()} — browser TTS`;
+    return;
+  }
+
+  // Probe all steps in parallel
+  const results = await Promise.all(
+    Array.from({length: count}, (_, i) => {
+      const url = `${folder}/step_${String(i+1).padStart(2,"0")}.mp3`;
+      return probeOne(url).then(ok => {
+        if (ok) audioCache[`${tab}_${i+1}`] = url;
+        return ok;
+      });
+    })
+  );
+
+  const found = results.filter(Boolean).length;
+
+  if (found === count) {
+    dot.className="audio-dot ok";
+    lbl.textContent=`${tab.toUpperCase()} — ${found}/${count} MP3 files ✓`;
+    updateTopBar(tab, found, count);
+  } else if (found > 0) {
+    dot.className="audio-dot tts";
+    lbl.textContent=`${tab.toUpperCase()} — ${found}/${count} MP3s + browser TTS`;
+    updateTopBar(tab, found, count);
+  } else {
+    dot.className="audio-dot tts";
+    lbl.textContent=`${tab.toUpperCase()} — browser TTS (no MP3s found)`;
+  }
+}
+
+function updateTopBar(tab, found, total) {
+  const badge = document.getElementById("audioModeBadge");
+  const lbl   = document.getElementById("audio-file-lbl");
+  badge.className="audio-mode mp3";
+  badge.textContent=`MP3 ${tab.toUpperCase()}`;
+  lbl.textContent=`${tab.toUpperCase()}: ${found}/${total} MP3 files loaded`;
+}
+
+function getAudioUrl(tab, stepIdx) {
+  // stepIdx is 0-based
+  const key = `${tab}_${stepIdx+1}`;
+  return audioCache[key] || null;  // null = fall through to TTS
+}
+
+const mp3s = {};  // kept for API compat (unused in web mode)
+let activeAudio = null;
+let callbackFired = false;
+let speaking = false;
+let autoMode = false;
+let allVoices = [], chosenVoice = null;
+
+speechSynthesis.addEventListener("voiceschanged", () => {
+  allVoices = speechSynthesis.getVoices();
+  const eng = allVoices.filter(v=>v.lang.startsWith("en"));
+  const pref = ["Google UK English Female","Google UK English Male","Samantha","Alex","Microsoft Zira"];
+  chosenVoice = eng.find(v=>pref.some(p=>v.name.startsWith(p.split(" ").slice(0,2).join(" "))))
+             || eng[0] || allVoices[0];
+});
+
+function updateAudioUI() {} // no-op in web mode
+
+function stopAudio() {
+  callbackFired=true;
+  speechSynthesis.cancel();
+  if(activeAudio){ activeAudio.onended=null; activeAudio.onerror=null; activeAudio.pause(); activeAudio.src=""; activeAudio=null; }
+  speaking=false; autoMode=false; setSdot(false); setWave(false);
+  document.getElementById("btnPlay").textContent="▶ Play";
+}
+
+function playStep(idx, onDone) {
+  speechSynthesis.cancel();
+  if(activeAudio){ activeAudio.onended=null; activeAudio.onerror=null; activeAudio.pause(); activeAudio.src=""; activeAudio=null; }
+  callbackFired=false;
+  const safeOnDone=()=>{ if(callbackFired)return; callbackFired=true; speaking=false; setSdot(false); setWave(false); onDone(); };
+
+  const url = getAudioUrl(activeTab, idx);
+  if(url){
+    const a=new Audio(url); activeAudio=a;
+    a.onplay=()=>{ if(activeAudio!==a)return; speaking=true; setSdot(true); setWave(true);
+      document.getElementById("audio-file-lbl").textContent=`Playing: ${activeTab.toUpperCase()} step ${idx+1}`; };
+    a.onended=()=>{ if(activeAudio!==a)return; activeAudio=null; safeOnDone(); };
+    a.onerror=()=>{ if(activeAudio!==a)return; activeAudio=null; useTTS(getSteps()[idx].text.replace(/<[^>]+>/g,""),safeOnDone); };
+    a.play().catch(()=>{ activeAudio=null; useTTS(getSteps()[idx].text.replace(/<[^>]+>/g,""),safeOnDone); });
+  } else {
+    useTTS(getSteps()[idx].text.replace(/<[^>]+>/g,""), safeOnDone);
+  }
+}
+
+function useTTS(text, safeOnDone) {
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.voice=chosenVoice; u.rate=+document.getElementById("spd").value;
+  u.onstart=()=>{ speaking=true; setSdot(true); setWave(true); document.getElementById("audio-file-lbl").textContent="Browser TTS (fallback)"; };
+  u.onend=()=>safeOnDone(); u.onerror=()=>safeOnDone();
+  speechSynthesis.speak(u);
+}
+
+function setSdot(on){ document.getElementById("sdot").className=on?"sdot":"sdot off"; }
+function setWave(on){ document.getElementById("waveform").className=on?"waveform":"waveform paused"; }
+
+function handlePlay() {
+  if(speaking){ stopAudio(); return; }
+  autoMode=true;
+  document.getElementById("btnPlay").textContent="⏸ Pause";
+  playStep(cur,onStepEnd);
+}
+
+function onStepEnd() {
+  clearActive();
+  if(autoMode && cur<getSteps().length-1){
+    setTimeout(()=>{ cur++; applyStep(cur); document.getElementById("btnPlay").textContent="⏸ Pause"; playStep(cur,onStepEnd); },700);
+  } else {
+    autoMode=false; document.getElementById("btnPlay").textContent="▶ Play";
+  }
+}
+
+function goNext() { stopAudio(); if(cur<getSteps().length-1){ cur++; applyStep(cur); } }
+function goPrev() { stopAudio(); if(cur>0){ cur--; resetAll(); for(let i=0;i<=cur;i++)accumulate(i); renderStep(cur); } }
+function doRestart() { stopAudio(); cur=0; resetAll(); applyStep(0); }
+function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
+
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&e.target===document.body){e.preventDefault();handlePlay();}
+  if(e.code==="ArrowRight") goNext();
+  if(e.code==="ArrowLeft")  goPrev();
+  if(e.code==="KeyF") toggleFS();
+});
+
+window.addEventListener("load",()=>{
+  // Build HTN on load; others built on demand
+  buildCLD("svg-htn", HTN_N, HTN_A, HTN_B, "h_");
+  builtTabs["htn"]=true;
+  // Probe audio files in background — non-blocking
+  probeAudio("htn");
+  probeAudio("dm");
+
+  // Open correct tab if ?tab= param is present (e.g. from overview page cards)
+  const tabParam = new URLSearchParams(window.location.search).get("tab");
+  if(tabParam && ["htn","dm","eces"].includes(tabParam)){
+    const tabEl = document.querySelector(`.tab[onclick*="'${tabParam}'"]`);
+    if(tabEl){ switchTab(tabParam, tabEl); return; }
+  }
+  setTimeout(()=>{ cur=0; applyStep(0); },200);
+});
+</script>
+</body>
+</html>
