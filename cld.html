@@ -692,21 +692,14 @@ const AUDIO_FOLDERS = { htn:"audio/htn", dm:"audio/dm", eces:null };
 // Cache of confirmed-existing audio URLs { "htn_1": "audio/htn/step_01.mp3", … }
 const audioCache = {};
 
-// Probe a single audio file — returns promise resolving to true/false
-// Uses Audio element load attempt (works on GitHub Pages, avoids CORS/HEAD issues)
+// Probe a single audio file — fetch with range request (works on GitHub Pages)
 function probeOne(url) {
-  return new Promise(resolve => {
-    const a = new Audio();
-    const done = (ok) => { a.src=""; resolve(ok); };
-    a.oncanplaythrough = () => done(true);
-    a.onerror          = () => done(false);
-    // Timeout fallback — if browser stalls (e.g. slow network), assume missing
-    const t = setTimeout(() => done(false), 6000);
-    a.oncanplaythrough = () => { clearTimeout(t); done(true); };
-    a.onerror          = () => { clearTimeout(t); done(false); };
-    a.preload = "metadata";  // load just enough to confirm existence
-    a.src = url;
-  });
+  return fetch(url, {
+    method: "GET",
+    headers: { "Range": "bytes=0-1023" }   // only fetch first 1KB
+  })
+  .then(r => r.ok || r.status === 206)      // 200 or 206 Partial Content = exists
+  .catch(() => false);
 }
 
 async function probeAudio(tab) {
